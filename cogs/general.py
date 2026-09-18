@@ -14,7 +14,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 from discord.ext.commands import Context
-
+from bot import DiscordBot
 
 class FeedbackForm(discord.ui.Modal, title="Feeedback"):
     feedback = discord.ui.TextInput(
@@ -32,7 +32,7 @@ class FeedbackForm(discord.ui.Modal, title="Feeedback"):
 
 
 class General(commands.Cog, name="general"):
-    def __init__(self, bot) -> None:
+    def __init__(self, bot: DiscordBot) -> None:
         self.bot = bot
         self.context_menu_user = app_commands.ContextMenu(
             name="Grab ID", callback=self.grab_id
@@ -64,7 +64,7 @@ class General(commands.Cog, name="general"):
             color=0xBEBEFE,
         )
         if spoiler_attachment is not None:
-            embed.set_image(url=attachment.url)
+            embed.set_image(url=attachment.url) # type: ignore
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
     # User context menu command
@@ -120,7 +120,7 @@ class General(commands.Cog, name="general"):
             color=0xBEBEFE,
         )
         embed.set_author(name="Bot Information")
-        embed.add_field(name="Owner:", value="Krypton#7331", inline=True)
+        embed.add_field(name="Owner:", value=self.bot.is_owner(context.author), inline=True)
         embed.add_field(
             name="Python Version:", value=f"{platform.python_version()}", inline=True
         )
