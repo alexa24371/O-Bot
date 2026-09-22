@@ -8,7 +8,8 @@ Version: 6.5.0
 
 # import json
 # import sys
-from discord.ext.commands import Context
+from discord.ext.commands import Context # pyright: ignore[reportMissingTypeStubs]
+from typing import Any
 
 import logging
 import os
@@ -59,7 +60,7 @@ class LoggingFormatter(logging.Formatter):
         logging.CRITICAL: red + bold,
     }
 
-    def format(self, record):
+    def format(self, record: logging.LogRecord):
         log_color = self.COLORS[record.levelno]
         format = "(black){asctime}(reset) (levelcolor){levelname:<8}(reset) (green){name}(reset) {message}"
         format = format.replace("(black)", self.black + self.bold)
@@ -154,7 +155,7 @@ class DiscordBot(commands.Bot):
         """
         This will just be executed when the bot starts the first time.
         """
-        self.logger.info(f"Logged in as {self.user.name}")
+        self.logger.info(f"Logged in as {self.user.name if self.user is not None else "Not Logged in"}")
         self.logger.info(f"discord.py API version: {discord.__version__}")
         self.logger.info(f"Python version: {platform.python_version()}")
         self.logger.info(
@@ -180,12 +181,13 @@ class DiscordBot(commands.Bot):
             return
         await self.process_commands(message)
 
-    async def on_command_completion(self, context: Context) -> None:
+    async def on_command_completion(self, context: Context[Any]) -> None:
         """
         The code in this event is executed every time a normal command has been *successfully* executed.
 
         :param context: The context of the command that has been executed.
         """
+        assert context.command is not None
         full_command_name = context.command.qualified_name
         split = full_command_name.split(" ")
         executed_command = str(split[0])
@@ -198,7 +200,7 @@ class DiscordBot(commands.Bot):
                 f"Executed {executed_command} command by {context.author} (ID: {context.author.id}) in DMs"
             )
 
-    async def on_command_error(self, context: Context, error) -> None:
+    async def on_command_error(self, context: Context[Any], error: Any) -> None:
         """
         The code in this event is executed every time a normal valid command catches an error.
 
@@ -256,4 +258,6 @@ class DiscordBot(commands.Bot):
 
 
 bot = DiscordBot()
-bot.run(os.getenv("TOKEN"))
+token = os.getenv("TOKEN")
+assert isinstance(token, str)
+bot.run(token)

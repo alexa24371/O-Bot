@@ -8,16 +8,17 @@ Version: 6.5.0
 
 import platform
 import random
+from typing import Any
 
 import aiohttp
 import discord
 from discord import app_commands
 from discord.ext import commands
-from discord.ext.commands import Context
+from discord.ext.commands import Context # pyright: ignore[reportMissingTypeStubs]
 
 
 class FeedbackForm(discord.ui.Modal, title="Feeedback"):
-    feedback = discord.ui.TextInput(
+    feedback: discord.ui.TextInput[Any] = discord.ui.TextInput(
         label="What do you think about this bot?",
         style=discord.TextStyle.long,
         placeholder="Type your answer here...",
