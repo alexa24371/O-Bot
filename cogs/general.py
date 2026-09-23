@@ -16,6 +16,10 @@ from discord import app_commands
 from discord.ext import commands
 from discord.ext.commands import Context # pyright: ignore[reportMissingTypeStubs]
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from bot import DiscordBot
 
 class FeedbackForm(discord.ui.Modal, title="Feeedback"):
     feedback: discord.ui.TextInput[Any] = discord.ui.TextInput(
@@ -33,7 +37,7 @@ class FeedbackForm(discord.ui.Modal, title="Feeedback"):
 
 
 class General(commands.Cog, name="general"):
-    def __init__(self, bot) -> None:
+    def __init__(self, bot: DiscordBot) -> None:
         self.bot = bot
         self.context_menu_user = app_commands.ContextMenu(
             name="Grab ID", callback=self.grab_id
@@ -65,7 +69,10 @@ class General(commands.Cog, name="general"):
             color=0xBEBEFE,
         )
         if spoiler_attachment is not None:
-            embed.set_image(url=attachment.url)
+            try:
+                embed.set_image(url=attachment.url) # type: ignore
+            except NameError:
+                self.bot.logger.warning("Something terrible happen")
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
     # User context menu command
@@ -87,7 +94,7 @@ class General(commands.Cog, name="general"):
     @commands.hybrid_command(
         name="help", description="List all commands the bot has loaded."
     )
-    async def help(self, context: Context) -> None:
+    async def help(self, context: Context[Any]) -> None:
         embed = discord.Embed(
             title="Help", description="List of available commands:", color=0xBEBEFE
         )
@@ -95,8 +102,9 @@ class General(commands.Cog, name="general"):
             if i == "owner" and not (await self.bot.is_owner(context.author)):
                 continue
             cog = self.bot.get_cog(i.lower())
+            assert cog is not None 
             commands = cog.get_commands()
-            data = []
+            data: list[str] = []
             for command in commands:
                 description = command.description.partition("\n")[0]
                 data.append(f"{command.name} - {description}")
@@ -110,7 +118,7 @@ class General(commands.Cog, name="general"):
         name="botinfo",
         description="Get some useful (or not) information about the bot.",
     )
-    async def botinfo(self, context: Context) -> None:
+    async def botinfo(self, context: Context[Any]) -> None:
         """
         Get some useful (or not) information about the bot.
 
@@ -137,12 +145,13 @@ class General(commands.Cog, name="general"):
         name="serverinfo",
         description="Get some useful (or not) information about the server.",
     )
-    async def serverinfo(self, context: Context) -> None:
+    async def serverinfo(self, context: Context[Any]) -> None:
         """
         Get some useful (or not) information about the server.
 
         :param context: The hybrid command context.
         """
+        assert context.guild
         roles = [role.name for role in context.guild.roles]
         num_roles = len(roles)
         if num_roles > 50:
@@ -168,7 +177,7 @@ class General(commands.Cog, name="general"):
         name="ping",
         description="Check if the bot is alive.",
     )
-    async def ping(self, context: Context) -> None:
+    async def ping(self, context: Context[Any]) -> None:
         """
         Check if the bot is alive.
 
@@ -185,7 +194,7 @@ class General(commands.Cog, name="general"):
         name="invite",
         description="Get the invite link of the bot to be able to invite it.",
     )
-    async def invite(self, context: Context) -> None:
+    async def invite(self, context: Context[Any]) -> None:
         """
         Get the invite link of the bot to be able to invite it.
 
@@ -205,7 +214,7 @@ class General(commands.Cog, name="general"):
         name="server",
         description="Get the invite link of the discord server of the bot for some support.",
     )
-    async def server(self, context: Context) -> None:
+    async def server(self, context: Context[Any]) -> None:
         """
         Get the invite link of the discord server of the bot for some support.
 
@@ -226,7 +235,7 @@ class General(commands.Cog, name="general"):
         description="Ask any question to the bot.",
     )
     @app_commands.describe(question="The question you want to ask.")
-    async def eight_ball(self, context: Context, *, question: str) -> None:
+    async def eight_ball(self, context: Context[Any], *, question: str) -> None:
         """
         Ask any question to the bot.
 
@@ -267,7 +276,7 @@ class General(commands.Cog, name="general"):
         name="bitcoin",
         description="Get the current price of bitcoin.",
     )
-    async def bitcoin(self, context: Context) -> None:
+    async def bitcoin(self, context: Context[Any]) -> None:
         """
         Get the current price of bitcoin.
 
@@ -324,5 +333,5 @@ class General(commands.Cog, name="general"):
         )
 
 
-async def setup(bot) -> None:
+async def setup(bot: DiscordBot) -> None:
     await bot.add_cog(General(bot))
