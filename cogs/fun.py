@@ -8,10 +8,15 @@ Version: 6.5.0
 
 import random
 
+from typing import Any, TYPE_CHECKING
+
 import aiohttp
 import discord
 from discord.ext import commands
-from discord.ext.commands import Context
+from discord.ext.commands import Context # type: ignore
+
+if TYPE_CHECKING:
+    from bot import DiscordBot
 
 
 class Choice(discord.ui.View):
@@ -21,20 +26,20 @@ class Choice(discord.ui.View):
 
     @discord.ui.button(label="Heads", style=discord.ButtonStyle.blurple)
     async def confirm(
-        self, interaction: discord.Interaction, button: discord.ui.Button
+        self, interaction: discord.Interaction, button: discord.ui.Button[Any]
     ) -> None:
         self.value = "heads"
         self.stop()
 
     @discord.ui.button(label="Tails", style=discord.ButtonStyle.blurple)
     async def cancel(
-        self, interaction: discord.Interaction, button: discord.ui.Button
+        self, interaction: discord.Interaction, button: discord.ui.Button[Any]
     ) -> None:
         self.value = "tails"
         self.stop()
 
 
-class RockPaperScissors(discord.ui.Select):
+class RockPaperScissors(discord.ui.Select[Any]):
     def __init__(self) -> None:
         options = [
             discord.SelectOption(
@@ -94,11 +99,11 @@ class RockPaperScissorsView(discord.ui.View):
 
 
 class Fun(commands.Cog, name="fun"):
-    def __init__(self, bot) -> None:
+    def __init__(self, bot: DiscordBot) -> None:
         self.bot = bot
 
     @commands.hybrid_command(name="randomfact", description="Get a random fact.")
-    async def randomfact(self, context: Context) -> None:
+    async def randomfact(self, context: Context[Any]) -> None:
         """
         Get a random fact.
 
@@ -123,7 +128,7 @@ class Fun(commands.Cog, name="fun"):
     @commands.hybrid_command(
         name="coinflip", description="Make a coin flip, but give your bet before."
     )
-    async def coinflip(self, context: Context) -> None:
+    async def coinflip(self, context: Context[Any]) -> None:
         """
         Make a coin flip, but give your bet before.
 
@@ -149,7 +154,7 @@ class Fun(commands.Cog, name="fun"):
     @commands.hybrid_command(
         name="rps", description="Play the rock paper scissors game against the bot."
     )
-    async def rock_paper_scissors(self, context: Context) -> None:
+    async def rock_paper_scissors(self, context: Context[Any]) -> None:
         """
         Play the rock paper scissors game against the bot.
 
@@ -159,5 +164,5 @@ class Fun(commands.Cog, name="fun"):
         await context.send("Please make your choice", view=view)
 
 
-async def setup(bot) -> None:
+async def setup(bot: DiscordBot) -> None:
     await bot.add_cog(Fun(bot))

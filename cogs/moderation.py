@@ -8,15 +8,18 @@ Version: 6.5.0
 
 import os
 from datetime import datetime
+from typing import TYPE_CHECKING, Any
 
 import discord
 from discord import app_commands
 from discord.ext import commands
-from discord.ext.commands import Context
+from discord.ext.commands import Context # type: ignore
 
+if TYPE_CHECKING:
+    from bot import DiscordBot
 
 class Moderation(commands.Cog, name="moderation"):
-    def __init__(self, bot) -> None:
+    def __init__(self, bot: DiscordBot) -> None:
         self.bot = bot
 
     @commands.hybrid_command(
@@ -30,7 +33,7 @@ class Moderation(commands.Cog, name="moderation"):
         reason="The reason why the user should be kicked.",
     )
     async def kick(
-        self, context: Context, user: discord.User, *, reason: str = "Not specified"
+        self, context: Context[Any], user: discord.User, *, reason: str = "Not specified"
     ) -> None:
         """
         Kick a user out of the server.
@@ -39,6 +42,7 @@ class Moderation(commands.Cog, name="moderation"):
         :param user: The user that should be kicked from the server.
         :param reason: The reason for the kick. Default is "Not specified".
         """
+        assert context.guild is not None
         member = context.guild.get_member(user.id) or await context.guild.fetch_member(
             user.id
         )
@@ -81,7 +85,7 @@ class Moderation(commands.Cog, name="moderation"):
         nickname="The new nickname that should be set.",
     )
     async def nick(
-        self, context: Context, user: discord.User, *, nickname: str = None
+        self, context: Context[Any], user: discord.User, *, nickname: str
     ) -> None:
         """
         Change the nickname of a user on a server.
@@ -90,6 +94,7 @@ class Moderation(commands.Cog, name="moderation"):
         :param user: The user that should have its nickname changed.
         :param nickname: The new nickname of the user. Default is None, which will reset the nickname.
         """
+        assert context.guild is not None
         member = context.guild.get_member(user.id) or await context.guild.fetch_member(
             user.id
         )
@@ -118,7 +123,7 @@ class Moderation(commands.Cog, name="moderation"):
         reason="The reason why the user should be banned.",
     )
     async def ban(
-        self, context: Context, user: discord.User, *, reason: str = "Not specified"
+        self, context: Context[Any], user: discord.User, *, reason: str = "Not specified"
     ) -> None:
         """
         Bans a user from the server.
@@ -127,6 +132,7 @@ class Moderation(commands.Cog, name="moderation"):
         :param user: The user that should be banned from the server.
         :param reason: The reason for the ban. Default is "Not specified".
         """
+        assert context.guild is not None
         member = context.guild.get_member(user.id) or await context.guild.fetch_member(
             user.id
         )
@@ -164,7 +170,7 @@ class Moderation(commands.Cog, name="moderation"):
         description="Manage warnings of a user on a server.",
     )
     @commands.has_permissions(manage_messages=True)
-    async def warning(self, context: Context) -> None:
+    async def warning(self, context: Context[Any]) -> None:
         """
         Manage warnings of a user on a server.
 
@@ -187,7 +193,7 @@ class Moderation(commands.Cog, name="moderation"):
         reason="The reason why the user should be warned.",
     )
     async def warning_add(
-        self, context: Context, user: discord.User, *, reason: str = "Not specified"
+        self, context: Context[Any], user: discord.User, *, reason: str = "Not specified"
     ) -> None:
         """
         Warns a user in his private messages.
@@ -196,6 +202,8 @@ class Moderation(commands.Cog, name="moderation"):
         :param user: The user that should be warned.
         :param reason: The reason for the warn. Default is "Not specified".
         """
+        assert context.guild is not None
+        assert self.bot.database is not None
         member = context.guild.get_member(user.id) or await context.guild.fetch_member(
             user.id
         )
@@ -228,7 +236,7 @@ class Moderation(commands.Cog, name="moderation"):
         warn_id="The ID of the warning that should be removed.",
     )
     async def warning_remove(
-        self, context: Context, user: discord.User, warn_id: int
+        self, context: Context[Any], user: discord.User, warn_id: int
     ) -> None:
         """
         Warns a user in his private messages.
@@ -237,6 +245,8 @@ class Moderation(commands.Cog, name="moderation"):
         :param user: The user that should get their warning removed.
         :param warn_id: The ID of the warning that should be removed.
         """
+        assert context.guild is not None
+        assert self.bot.database is not None
         member = context.guild.get_member(user.id) or await context.guild.fetch_member(
             user.id
         )
@@ -253,13 +263,15 @@ class Moderation(commands.Cog, name="moderation"):
     )
     @commands.has_guild_permissions(manage_messages=True)
     @app_commands.describe(user="The user you want to get the warnings of.")
-    async def warning_list(self, context: Context, user: discord.User) -> None:
+    async def warning_list(self, context: Context[Any], user: discord.User) -> None:
         """
         Shows the warnings of a user in the server.
 
         :param context: The hybrid command context.
         :param user: The user you want to get the warnings of.
         """
+        assert context.guild is not None
+        assert self.bot.database is not None
         warnings_list = await self.bot.database.get_warnings(user.id, context.guild.id)
         embed = discord.Embed(title=f"Warnings of {user}", color=0xBEBEFE)
         description = ""
@@ -278,7 +290,7 @@ class Moderation(commands.Cog, name="moderation"):
     @commands.has_guild_permissions(manage_messages=True)
     @commands.bot_has_permissions(manage_messages=True)
     @app_commands.describe(amount="The amount of messages that should be deleted.")
-    async def purge(self, context: Context, amount: int) -> None:
+    async def purge(self, context: Context[Any], amount: int) -> None:
         """
         Delete a number of messages.
 
@@ -288,6 +300,7 @@ class Moderation(commands.Cog, name="moderation"):
         await context.send(
             "Deleting messages..."
         )  # Bit of a hacky way to make sure the bot responds to the interaction and doens't get a "Unknown Interaction" response
+        assert not isinstance(context.channel, discord.DMChannel) and not isinstance(context.channel, discord.GroupChannel) and not isinstance(context.channel, discord.PartialMessageable) 
         purged_messages = await context.channel.purge(limit=amount + 1)
         embed = discord.Embed(
             description=f"**{context.author}** cleared **{len(purged_messages)-1}** messages!",
@@ -306,7 +319,7 @@ class Moderation(commands.Cog, name="moderation"):
         reason="The reason why the user should be banned.",
     )
     async def hackban(
-        self, context: Context, user_id: str, *, reason: str = "Not specified"
+        self, context: Context[Any], user_id: str, *, reason: str = "Not specified"
     ) -> None:
         """
         Bans a user without the user having to be in the server.
@@ -316,6 +329,7 @@ class Moderation(commands.Cog, name="moderation"):
         :param reason: The reason for the ban. Default is "Not specified".
         """
         try:
+            assert context.guild is not None
             await self.bot.http.ban(user_id, context.guild.id, reason=reason)
             user = self.bot.get_user(int(user_id)) or await self.bot.fetch_user(
                 int(user_id)
@@ -341,12 +355,13 @@ class Moderation(commands.Cog, name="moderation"):
     @app_commands.describe(
         limit="The limit of messages that should be archived.",
     )
-    async def archive(self, context: Context, limit: int = 10) -> None:
+    async def archive(self, context: Context[Any], limit: int = 10) -> None:
         """
         Archives in a text file the last messages with a chosen limit of messages. This command requires the MESSAGE_CONTENT intent to work properly.
 
         :param limit: The limit of messages that should be archived. Default is 10.
         """
+        assert context.guild is not None
         log_file = f"{context.channel.id}.log"
         with open(log_file, "w", encoding="UTF-8") as f:
             f.write(
@@ -355,7 +370,7 @@ class Moderation(commands.Cog, name="moderation"):
             async for message in context.channel.history(
                 limit=limit, before=context.message
             ):
-                attachments = []
+                attachments: list[str] = []
                 for attachment in message.attachments:
                     attachments.append(attachment.url)
                 attachments_text = (
@@ -371,5 +386,5 @@ class Moderation(commands.Cog, name="moderation"):
         os.remove(log_file)
 
 
-async def setup(bot) -> None:
+async def setup(bot: DiscordBot) -> None:
     await bot.add_cog(Moderation(bot))

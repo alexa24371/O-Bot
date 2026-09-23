@@ -73,7 +73,7 @@ class DatabaseManager:
             result = await cursor.fetchone()
             return result[0] if result is not None else 0
 
-    async def get_warnings(self, user_id: int, server_id: int) -> list:
+    async def get_warnings(self, user_id: int, server_id: int) -> list[aiosqlite.Row]:
         """
         This function will get all the warnings of a user.
 
@@ -90,7 +90,7 @@ class DatabaseManager:
         )
         async with rows as cursor:
             result = await cursor.fetchall()
-            result_list = []
+            result_list: list[aiosqlite.Row] = []
             for row in result:
                 result_list.append(row)
             return result_list
